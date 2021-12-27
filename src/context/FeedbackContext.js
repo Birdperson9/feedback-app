@@ -53,7 +53,10 @@ export const FeedbackProvider = ({ children }) => {
         feedback,
         addFeedback,
         deleteFeedback,
+        // Function that runs onClick
         editFeedback,
+        // Piece of state (object with item and boolean)
+        feedbackEdit,
       }}
     >
       {children}
