@@ -59,9 +59,7 @@ export const FeedbackProvider = ({ children }) => {
 
     const data = await response.json()
 
-    setFeedback(
-      feedback.map((item) => (item.id === id ? { ...item, ...data } : item))
-    )
+    setFeedback(feedback.map((item) => (item.id === id ? data : item)))
     setFeedbackEdit({
       item: {},
       edit: false,
