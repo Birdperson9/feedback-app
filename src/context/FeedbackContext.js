@@ -1,4 +1,14 @@
 import { createContext, useState, useEffect } from 'react'
+import {
+  addDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+  collection,
+  getDocs,
+  query,
+} from 'firebase/firestore'
+import { db } from '../firebase.config'
 
 const FeedbackContext = createContext()
 
@@ -16,54 +26,45 @@ export const FeedbackProvider = ({ children }) => {
 
   // Fetch feedback
   const fetchFeedback = async () => {
-    const response = await fetch('/feedback?_sort=id&_order=desc')
-    const data = await response.json()
-
-    setFeedback(data)
+    const feedbacks = []
+    try {
+      // Get reference
+      const feedbackRef = collection(db, 'feedback')
+      // Create a query
+      const q = query(feedbackRef)
+      // Execute query
+      const querySnap = await getDocs(q)
+      querySnap.forEach((doc) => {
+        let feedback = { id: doc.id, ...doc.data() }
+        return feedbacks.push(feedback)
+      })
+    } catch (error) {}
+    setFeedback(feedbacks)
     setIsLoading(false)
   }
 
   // Add feedback
   const addFeedback = async (newFeedback) => {
-    const response = await fetch('/feedback', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(newFeedback),
-    })
-
-    const data = await response.json()
-
-    setFeedback([data, ...feedback])
+    const docRef = await addDoc(collection(db, 'feedback'), newFeedback)
+    newFeedback = { id: docRef.id, ...newFeedback }
+    setFeedback([newFeedback, ...feedback])
   }
 
   // Delete feedback
   const deleteFeedback = async (id) => {
     if (window.confirm('Are you sure you want to delete?')) {
-      await fetch(`/feedback/${id}`, { method: 'DELETE' })
-
+      await deleteDoc(doc(db, 'feedback', id))
       setFeedback(feedback.filter((item) => item.id !== id))
     }
   }
 
   // Update feedback item
   const updateFeedback = async (id, updItem) => {
-    const response = await fetch(`/feedback/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updItem),
-    })
-
-    const data = await response.json()
-
-    setFeedback(feedback.map((item) => (item.id === id ? data : item)))
-    setFeedbackEdit({
-      item: {},
-      edit: false,
-    })
+    const feedbackRef = doc(db, 'feedback', id)
+    await updateDoc(feedbackRef, updItem)
+    setFeedback(
+      feedback.map((item) => (item.id === id ? { ...item, ...updItem } : item))
+    )
   }
 
   // Set item to be updated
