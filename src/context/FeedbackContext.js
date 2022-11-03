@@ -7,6 +7,8 @@ import {
   collection,
   getDocs,
   query,
+  serverTimestamp,
+  orderBy,
 } from 'firebase/firestore'
 import { db } from '../firebase.config'
 
@@ -31,7 +33,7 @@ export const FeedbackProvider = ({ children }) => {
       // Get reference
       const feedbackRef = collection(db, 'feedback')
       // Create a query
-      const q = query(feedbackRef)
+      const q = query(feedbackRef, orderBy('timestamp', 'desc'))
       // Execute query
       const querySnap = await getDocs(q)
       querySnap.forEach((doc) => {
@@ -46,7 +48,17 @@ export const FeedbackProvider = ({ children }) => {
   // Add feedback
   const addFeedback = async (newFeedback) => {
     const docRef = await addDoc(collection(db, 'feedback'), newFeedback)
-    newFeedback = { id: docRef.id, ...newFeedback }
+    newFeedback = {
+      id: docRef.id,
+      ...newFeedback,
+    }
+
+    // Update the timestamp field with the value from the server
+    // eslint-disable-next-line
+    const updateTimestamp = await updateDoc(docRef, {
+      timestamp: serverTimestamp(),
+    })
+
     setFeedback([newFeedback, ...feedback])
   }
 
